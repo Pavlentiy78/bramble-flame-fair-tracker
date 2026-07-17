@@ -202,6 +202,7 @@ function FairTracker() {
   const [fairs, setFairs] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [filter, setFilter] = useState("All");
+  const [countyFilter, setCountyFilter] = useState("All");
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
@@ -358,16 +359,20 @@ function FairTracker() {
   function removeFair(id) {
     persist(fairs.filter(f => f.id !== id));
   }
+  const counties = useMemo(() => {
+    return Array.from(new Set(fairs.map(f => f.location).filter(Boolean))).sort();
+  }, [fairs]);
   const filtered = useMemo(() => {
     let list = [...fairs];
     if (filter !== "All") list = list.filter(f => f.status === filter);
+    if (countyFilter !== "All") list = list.filter(f => f.location === countyFilter);
     list.sort((a, b) => {
       if (!a.date) return 1;
       if (!b.date) return -1;
       return a.date.localeCompare(b.date);
     });
     return list;
-  }, [fairs, filter]);
+  }, [fairs, filter, countyFilter]);
   const upcomingDeadlines = useMemo(() => {
     return fairs.filter(f => f.deadline && daysUntil(f.deadline) >= 0 && daysUntil(f.deadline) <= 21).sort((a, b) => a.deadline.localeCompare(b.deadline));
   }, [fairs]);
@@ -569,7 +574,26 @@ function FairTracker() {
       fontSize: 13,
       fontWeight: filter === s ? 600 : 400
     }
-  }, s, s !== "All" && ` (${fairs.filter(f => f.status === s).length})`))), filtered.length === 0 ? /*#__PURE__*/React.createElement("div", {
+  }, s, s !== "All" && ` (${fairs.filter(f => f.status === s).length})`))), counties.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      flexWrap: "wrap",
+      marginBottom: 20
+    }
+  }, ["All", ...counties].map(c => /*#__PURE__*/React.createElement("button", {
+    key: c,
+    onClick: () => setCountyFilter(c),
+    style: {
+      background: countyFilter === c ? PLUM : "transparent",
+      color: countyFilter === c ? "#F6EAD3" : INK_SOFT,
+      border: `1px solid ${countyFilter === c ? PLUM : LINE}`,
+      borderRadius: 999,
+      padding: "6px 14px",
+      fontSize: 13,
+      fontWeight: countyFilter === c ? 600 : 400
+    }
+  }, c, c !== "All" && ` (${fairs.filter(f => f.location === c).length})`))), filtered.length === 0 ? /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
       padding: "60px 20px",
